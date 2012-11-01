@@ -1,0 +1,28 @@
+{
+   "name": "BGG++",
+   "version": "0.0.1",
+   "manifest_version" : 2,
+
+   "description": "Improves the depth of data displayed in BoardGameGeek.com",
+   "icons": {
+      "128": "icon.png",
+      "16": "icon16.png",
+      "48": "icon.png"
+   },
+
+   "permissions": [ 
+      "http://*.boardgamegeek.com/*",
+      "tabs"
+   ],
+   "background": { "page": "background.html" },
+   "content_scripts": [
+      {
+         "matches": [
+            "http://*.boardgamegeek.com/*"
+         ],
+         "js": ["bgg-plus-content.js"],
+         "run_at": "document_start"
+      }
+   ],
+   "options_page": "options.html"
+}
