@@ -335,12 +335,159 @@ function searchResultsColumns(cfg)
    */
 }
 
+function scrollToPrevSubbed(newItemsAttr)
+{
+   // Determine where we are, and then figure out which is the next item
+   // "above" us
+   var currentPos = jQuery(window).scrollTop();
+
+   var len = newItemsAttr.items.length;
+   var nearest = -1, nearestDelta = -1;
+   for (i=0; i < len; ++i)
+   {
+      var delta = newItemsAttr.tops[i] - currentPos;
+
+      // Note: When we call ScrollTo, it will only scroll to within 10 px of
+      //       the element. So it we're already there, we should go to the next
+      //       element.
+
+      if ((nearest == -1) ||
+            (delta < 0 && delta > nearestDelta))
+      {
+         nearest = i;
+         nearestDelta = delta;
+      }
+   }
+
+   if (nearest != -1)
+   {
+      $(newItemsAttr.items[nearest]).ScrollTo();
+   }
+
+   return false;
+}
+
+function scrollToNextSubbed(newItemsAttr)
+{
+   // Determine where we are, and then figure out which is the next item
+   // "below" us
+   var currentPos = jQuery(window).scrollTop();
+
+   var len = newItemsAttr.items.length;
+   var nearest = -1, nearestDelta = -1;
+   for (i=0; i < len; ++i)
+   {
+      var delta = newItemsAttr.tops[i] - currentPos;
+
+      // Note: When we call ScrollTo, it will only scroll to within 10 px of
+      //       the element. So it we're already there, we should go to the next
+      //       element.
+
+      if ((nearest == -1 && delta > 10) ||
+            (delta > 0 && delta < nearestDelta))
+      {
+         nearest = i;
+         nearestDelta = delta;
+      }
+   }
+
+   if (nearest != -1)
+   {
+      $(newItemsAttr.items[nearest]).ScrollTo();
+   }
+
+   return false;
+}
+
+function getSubscriptionsNewItemAttr(newItems)
+{
+   if (newItems.length == 0) return { 'items' : newItems };
+
+   var tops = [];
+   var len = newItems.length;
+   for (i=0; i < len; ++i)
+   {
+      tops[i] = jQuery(newItems[i]).offset().top;
+   }
+
+   return {
+      'items': newItems,
+      'tops': tops
+   };
+}
+
+function prevNextSubscriptionItemsInPage()
+{
+   var newItemsAttr = getSubscriptionsNewItemAttr(
+         jQuery('.subbed_selected, .subbed'));
+
+   // Since the user is browsing her subscriptions' new items, we should
+   // add a toolbar to allow skipping among them.
+   var toolbar = document.createElement('div');
+   toolbar.id = 'BGG_PLUS_PLUS_SUBSCRIPTION_BROWSE_TOOLBAR';
+   toolbar.style.position = 'fixed';
+   toolbar.style.top = '0px';
+   toolbar.style.right = '0px';
+   toolbar.style.backgroundColor = 'pink';
+   toolbar.style.border = '1px solid black';
+   toolbar.style.webkitUserSelect = 'none';
+
+   if (localStorage['hidePrevNextNewItemsText'] != '1')
+   {
+      var text1 = toolbar.appendChild(document.createElement('span'));
+      text1.innerHTML =
+         "BGG++: Use these buttons to jump among new items on this page.<br/>";
+      text1.style.fontSize = '10px';
+
+      var hideTextLink = toolbar.appendChild(document.createElement('div'));
+      hideTextLink.style.color = 'blue';
+      hideTextLink.style.textDecoration = 'underline';
+      hideTextLink.style.fontSize = '10px';
+      hideTextLink.style.cursor = 'pointer';
+      hideTextLink.innerHTML = '[hide this text]';
+      hideTextLink.onclick = function() {
+         localStorage['hidePrevNextNewItemsText'] = '1';
+         text1.style.display = 'none';
+         hideTextLink.style.display = 'none';
+      };
+   }
+
+   var nextPage = toolbar.appendChild(document.createElement('div'));
+   nextPage.innerHTML = '<img src="newspaper-go.png"/>';
+   nextPage.style.fontFamily = 'Webdings';
+   nextPage.style.cursor = 'pointer';
+   nextPage.style.float = 'right';
+   nextPage.style.paddingLeft = '20px';
+   nextPage.onclick = function() {
+      window.location.href = 'http://boardgamegeek.com/subscriptions/next';
+   };
+
+   var prevItem = toolbar.appendChild(document.createElement('div'));
+   prevItem.innerHTML = '<img src="newspaper-up.png"/>';
+   prevItem.style.fontFamily = 'Webdings';
+   prevItem.style.cursor = 'pointer';
+   prevItem.style.float = 'right';
+   prevItem.onclick = function() { return scrollToPrevSubbed(newItemsAttr) };
+
+   var nextItem = toolbar.appendChild(document.createElement('div'));
+   nextItem.innerHTML = '<img src="newspaper-down.png"/>';
+   nextItem.style.fontFamily = 'Webdings';
+   nextItem.style.cursor = 'pointer';
+   nextItem.style.float = 'right';
+   nextItem.onclick = function() { return scrollToNextSubbed(newItemsAttr) };
+
+   document.body.appendChild(toolbar);
+}
+
 function processPage(options)
 {
    var href = location.href;
    href = href.replace(
          'http://www.boardgamegeek.com',
          'http://boardgamegeek.com');
+
+   // If the user wishes that we "jump to single search result", then we
+   // shouldn't even try to get the "custom columns" for the search results.
    if (href.indexOf('http://boardgamegeek.com/geeksearch.php') == 0)
    {
       var success = false;
@@ -353,6 +500,21 @@ function processPage(options)
       {
          searchResultsColumns(options.searchresultcolumns);
       }
+   }
+   else
+   {
+      // See if there are any hightlighted items on the page, 
+      // if the user is browsing new items in his subscriptions
+      var subbedSelected = jQuery('.subbed_selected');
+      if (subbedSelected.length == 0)
+      {
+         // Nope! No selected items!
+         return;
+      }
+
+      $(window).load(function () {
+            prevNextSubscriptionItemsInPage(options);
+      });
    }
 }
 
@@ -380,3 +542,8 @@ function onload()
 }
 
 document.addEventListener('DOMContentLoaded', function() { onload(); }, false);
+
+if (!chrome || !chrome.extension)
+{
+   jQuery(function(){processPage({});})
+}
