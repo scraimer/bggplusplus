@@ -1,3 +1,16 @@
+Array.prototype.binarySearch = function(find, comparator) {
+  var low = 0, high = this.length - 1,
+      i, comparison;
+  while (low <= high) {
+    i = Math.floor((low + high) / 2);
+    comparison = comparator(this[i], find);
+    if (comparison < 0) { low = i + 1; continue; };
+    if (comparison > 0) { high = i - 1; continue; };
+    return i;
+  }
+  return null;
+};
+
 function singleSearchResultJump()
 {
    var rows = document.
@@ -399,6 +412,34 @@ function scrollToNextSubbed(newItemsAttr)
    return false;
 }
 
+function updateToolbarByScrollPosition(
+      newItemsAttr, totalItemNum, prevItem, nextItem)
+{
+   var currentPos = jQuery(window).scrollTop();
+   var passed = 0;
+   var len = newItemsAttr.tops.length;
+   for (i=0; i < len; ++i)
+   {
+      if (newItemsAttr.tops[i] - currentPos <= 10)
+      {
+         passed = i+1;
+      }
+   }
+
+   var scrolledToBottom = (window.innerHeight + document.body.scrollTop) >
+      document.body.offsetHeight;
+   var prevEnable = (passed > 1);
+   var nextEnable = (passed < len) && !scrolledToBottom;
+
+   totalItemNum.innerHTML = passed;
+   var n = jQuery(nextItem);
+   if (nextEnable && n.hasClass('disabled')) n.removeClass('disabled');
+   if (!nextEnable && !n.hasClass('disabled')) n.addClass('disabled');
+   var p = jQuery(prevItem);
+   if (prevEnable && p.hasClass('disabled')) p.removeClass('disabled');
+   if (!prevEnable && !p.hasClass('disabled')) p.addClass('disabled');
+}
+
 function getSubscriptionsNewItemAttr(newItems)
 {
    if (newItems.length == 0) return { 'items' : newItems };
@@ -412,7 +453,7 @@ function getSubscriptionsNewItemAttr(newItems)
 
    return {
       'items': newItems,
-      'tops': tops
+      'tops': tops.sort()
    };
 }
 
@@ -424,13 +465,9 @@ function prevNextSubscriptionItemsInPage()
    // Since the user is browsing her subscriptions' new items, we should
    // add a toolbar to allow skipping among them.
    var toolbar = document.createElement('div');
-   toolbar.id = 'BGG_PLUS_PLUS_SUBSCRIPTION_BROWSE_TOOLBAR';
-   toolbar.style.position = 'fixed';
-   toolbar.style.top = '0px';
-   toolbar.style.right = '0px';
-   toolbar.style.backgroundColor = 'pink';
-   toolbar.style.border = '1px solid black';
-   toolbar.style.webkitUserSelect = 'none';
+   toolbar.className = 'bggpluscontentscript_toolbar';
+   toolbar.onmouseover = function() { toolbar.style.opacity = 1; }
+   toolbar.onmouseout = function() { toolbar.style.opacity = 0.5; }
 
    if (localStorage['hidePrevNextNewItemsText'] != '1')
    {
@@ -453,30 +490,49 @@ function prevNextSubscriptionItemsInPage()
    }
 
    var nextPage = toolbar.appendChild(document.createElement('div'));
-   nextPage.innerHTML = '<img src="newspaper-go.png"/>';
-   nextPage.style.fontFamily = 'Webdings';
-   nextPage.style.cursor = 'pointer';
-   nextPage.style.float = 'right';
-   nextPage.style.paddingLeft = '20px';
+   nextPage.className = 'bggpluscontentscript_nextPage';
    nextPage.onclick = function() {
       window.location.href = 'http://boardgamegeek.com/subscriptions/next';
    };
 
+   var totalItemNum = toolbar.appendChild(document.createElement('div'));
+   totalItemNum.innerHTML = "/" + newItemsAttr.tops.length;
+   totalItemNum.style.fontSize = '13px';
+   totalItemNum.style.float = 'right';
+   totalItemNum.style.paddingRight = '3px';
+
+   var currentItemNum = toolbar.appendChild(document.createElement('div'));
+   currentItemNum.innerHTML = "0";
+   currentItemNum.style.fontSize = '13px';
+   currentItemNum.style.float = 'right';
+   currentItemNum.style.paddingLeft = '3px';
+
    var prevItem = toolbar.appendChild(document.createElement('div'));
-   prevItem.innerHTML = '<img src="newspaper-up.png"/>';
-   prevItem.style.fontFamily = 'Webdings';
-   prevItem.style.cursor = 'pointer';
-   prevItem.style.float = 'right';
+   prevItem.className = 'bggpluscontentscript_prevItem';
    prevItem.onclick = function() { return scrollToPrevSubbed(newItemsAttr) };
 
    var nextItem = toolbar.appendChild(document.createElement('div'));
-   nextItem.innerHTML = '<img src="newspaper-down.png"/>';
-   nextItem.style.fontFamily = 'Webdings';
-   nextItem.style.cursor = 'pointer';
-   nextItem.style.float = 'right';
+   nextItem.className = 'bggpluscontentscript_nextItem';
    nextItem.onclick = function() { return scrollToNextSubbed(newItemsAttr) };
 
    document.body.appendChild(toolbar);
+
+   // We want to fire the scroll-update right away, and also make sure that
+   // we don't fire it on EVERY scroll (there might be a LOT). Instead, we
+   // build in a delay.
+   var scrollTimeout = null;
+   var updateByScroll = function() {
+      updateToolbarByScrollPosition(
+         newItemsAttr, currentItemNum, prevItem, nextItem);
+   };
+   jQuery(window).on('scroll', function() {
+      if (scrollTimeout == null) 
+         scrollTimeout = setTimeout(function() {
+            updateByScroll();
+            scrollTimeout = null;
+         }, 100);
+   });
+   updateByScroll();
 }
 
 function processPage(options)
@@ -512,9 +568,7 @@ function processPage(options)
          return;
       }
 
-      $(window).load(function () {
-            prevNextSubscriptionItemsInPage(options);
-      });
+      prevNextSubscriptionItemsInPage(options);
    }
 }
 
@@ -534,16 +588,14 @@ function onload()
    chrome.extension.sendRequest(
       {'cmd': 'insertCss'},
       function (success) {
-         console.log(success ?
-            "requestCssInsert: Inserted CSS successfully." :
-            "requestCssInsert: Failure during CSS insertion.");
+         if (!success) { 
+            console.log("requestCssInsert: Failure during CSS insertion.");
+         }
       });
-   
 }
 
-document.addEventListener('DOMContentLoaded', function() { onload(); }, false);
 
-if (!chrome || !chrome.extension)
-{
-   jQuery(function(){processPage({});})
-}
+jQuery(function() { 
+      onload();
+});
+
