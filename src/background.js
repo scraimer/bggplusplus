@@ -32,6 +32,11 @@ function getOptions()
       tmpOpt['searchresultscolumnsenable'] = 1;
       changed = true;
    }
+   if (tmpOpt['prevNextSubscriptionToolbarShow'] == null)
+   {
+      tmpOpt['prevNextSubscriptionToolbarShow'] = 'only_when_some';
+      changed = true;
+   }
 
    if (changed)
    {

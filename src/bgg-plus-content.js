@@ -426,8 +426,9 @@ function updateToolbarByScrollPosition(
       }
    }
 
-   var scrolledToBottom = (window.innerHeight + document.body.scrollTop) >
-      document.body.offsetHeight;
+   var scrolledToBottom =
+      (document.body.scrollTop - document.body.scrollHeight) >=
+      window.innerHeight;
    var prevEnable = (passed > 1);
    var nextEnable = (passed < len) && !scrolledToBottom;
 
@@ -559,16 +560,24 @@ function processPage(options)
    }
    else
    {
-      // See if there are any hightlighted items on the page, 
-      // if the user is browsing new items in his subscriptions
-      var subbedSelected = jQuery('.subbed_selected');
-      if (subbedSelected.length == 0)
+      var showNextSubbedToolbar = false;
+
+      if (options['prevNextSubscriptionToolbarShow'] == 'even_when_all_new')
       {
-         // Nope! No selected items!
-         return;
+         showNextSubbedToolbar =
+            (jQuery('.subbed_selected, .subbed').length > 0);
+      }
+      else if (options['prevNextSubscriptionToolbarShow'] == 'only_when_some')
+      {
+         // See if there are any hightlighted items on the page, 
+         // if the user is browsing new items in his subscriptions
+         showNextSubbedToolbar = (jQuery('.subbed_selected').length > 0);
       }
 
-      prevNextSubscriptionItemsInPage(options);
+      if (showNextSubbedToolbar)
+      {
+         prevNextSubscriptionItemsInPage(options);
+      }
    }
 }
 
