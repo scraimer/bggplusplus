@@ -536,6 +536,32 @@ function prevNextSubscriptionItemsInPage()
    updateByScroll();
 }
 
+function showMicrobadgeCounts()
+{
+   var trIter = document.evaluate(
+         '//*[@class="profile_title"]/text()[contains(.,"Microbadges for ")]' +
+         '/ancestor::*[@class="profile_block"]/descendant::tr',
+         document, null, XPathResult.ANY_TYPE, null);
+
+   if (trIter == null) return;
+
+   var node = trIter.iterateNext();
+   var updates = [];
+   while(node)
+   {
+      var tds = node.getElementsByTagName('td');
+      updates.push({
+         'td': tds[0],
+         'num': tds[1].getElementsByClassName("mbimg").length});
+      node = trIter.iterateNext();
+   }
+
+   for (var i=0; i<updates.length; ++i)
+   {
+      updates[i].td.innerHTML += " [" + updates[i].num + "]";
+   }
+}
+
 function processPage(options)
 {
    var href = location.href;
@@ -556,6 +582,14 @@ function processPage(options)
       if ((!success) && options['searchresultscolumnsenable'] == 1)
       {
          searchResultsColumns(options.searchresultcolumns);
+      }
+   }
+   // A user's profile page
+   else if (href.indexOf('http://boardgamegeek.com/user/') == 0)
+   {
+      if (options['showMicrobadgeCounts'] == 1)
+      {
+         showMicrobadgeCounts();
       }
    }
    else

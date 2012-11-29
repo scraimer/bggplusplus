@@ -24,6 +24,8 @@ function onload()
       .addEventListener('change', saveChange, false);
    document.getElementById('prevNextSubscriptionToolbarShow')
       .addEventListener('change', saveChange, false);
+   document.getElementById('showMicrobadgeCounts')
+      .addEventListener('change', saveChange, false);
 
    var options = backgroundPage.getOptions();
    for (var id in options)
