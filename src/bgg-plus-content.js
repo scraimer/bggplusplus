@@ -546,19 +546,20 @@ function showMicrobadgeCounts()
    if (trIter == null) return;
 
    var node = trIter.iterateNext();
-   var updates = [];
+   var delayedUpdates = [];
    while(node)
    {
       var tds = node.getElementsByTagName('td');
-      updates.push({
+      delayedUpdates.push({
          'td': tds[0],
-         'num': tds[1].getElementsByClassName("mbimg").length});
+         'num': tds[1].getElementsByClassName("mbimg").length + 
+            tds[1].getElementsByClassName("tilebadge").length});
       node = trIter.iterateNext();
    }
 
-   for (var i=0; i<updates.length; ++i)
+   for (var i=0; i<delayedUpdates.length; ++i)
    {
-      updates[i].td.innerHTML += " [" + updates[i].num + "]";
+      delayedUpdates[i].td.innerHTML += " [" + delayedUpdates[i].num + "]";
    }
 }
 
