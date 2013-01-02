@@ -1,6 +1,6 @@
 {
    "name": "BGG++",
-   "version": "0.0.4",
+   "version": "0.0.3",
    "manifest_version" : 2,
 
    "description": "Improves the depth of data displayed in BoardGameGeek.com",
@@ -17,7 +17,7 @@
    "background": { "page": "background.html" },
    "content_scripts": [
       {
-         "matches": ["http://*.boardgamegeek.com/*"],
+         "matches": ["<all_urls>"],
          "css": ["content.css"],
          "js": [
             "jquery-1.8.2.js", "jquery.scrollto.js",

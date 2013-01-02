@@ -354,11 +354,11 @@ function scrollToPrevSubbed(newItemsAttr)
    // "above" us
    var currentPos = jQuery(window).scrollTop();
 
-   var len = newItemsAttr.items.length;
+   var len = newItemsAttr.length;
    var nearest = -1, nearestDelta = -1;
    for (i=0; i < len; ++i)
    {
-      var delta = newItemsAttr.tops[i] - currentPos;
+      var delta = newItemsAttr[i].top - currentPos;
 
       // Note: When we call ScrollTo, it will only scroll to within 10 px of
       //       the element. So it we're already there, we should go to the next
@@ -374,7 +374,7 @@ function scrollToPrevSubbed(newItemsAttr)
 
    if (nearest != -1)
    {
-      $(newItemsAttr.items[nearest]).ScrollTo();
+      $(newItemsAttr[nearest].item).ScrollTo();
    }
 
    return false;
@@ -386,11 +386,11 @@ function scrollToNextSubbed(newItemsAttr)
    // "below" us
    var currentPos = jQuery(window).scrollTop();
 
-   var len = newItemsAttr.items.length;
+   var len = newItemsAttr.length;
    var nearest = -1, nearestDelta = -1;
    for (i=0; i < len; ++i)
    {
-      var delta = newItemsAttr.tops[i] - currentPos;
+      var delta = newItemsAttr[i].top - currentPos;
 
       // Note: When we call ScrollTo, it will only scroll to within 10 px of
       //       the element. So it we're already there, we should go to the next
@@ -406,7 +406,7 @@ function scrollToNextSubbed(newItemsAttr)
 
    if (nearest != -1)
    {
-      $(newItemsAttr.items[nearest]).ScrollTo();
+      $(newItemsAttr[nearest].item).ScrollTo();
    }
 
    return false;
@@ -417,10 +417,10 @@ function updateToolbarByScrollPosition(
 {
    var currentPos = jQuery(window).scrollTop();
    var passed = 0;
-   var len = newItemsAttr.tops.length;
+   var len = newItemsAttr.length;
    for (i=0; i < len; ++i)
    {
-      if (newItemsAttr.tops[i] - currentPos <= 10)
+      if (newItemsAttr[i].top - currentPos <= 10)
       {
          passed = i+1;
       }
@@ -443,30 +443,45 @@ function updateToolbarByScrollPosition(
 
 function getSubscriptionsNewItemAttr(newItems)
 {
-   if (newItems.length == 0) return { 'items' : newItems };
+   if (newItems.length == 0)
+      throw 'No new items!';
 
-   var tops = [];
+   var itemsAttr = [];
    var len = newItems.length;
    for (i=0; i < len; ++i)
    {
-      tops[i] = jQuery(newItems[i]).offset().top;
+      var item = jQuery(newItems[i]);
+      itemsAttr.push({
+         'top': item.offset().top,
+         'item': item
+      });
    }
 
-   return {
-      'items': newItems,
-      'tops': tops.sort()
-   };
+   return itemsAttr.sort(function(a,b) { return a.top - b.top; });
 }
 
-function prevNextSubscriptionItemsInPage()
+function prevNextSubscriptionItemsInPage(options)
 {
-   var newItemsAttr = getSubscriptionsNewItemAttr(
-         jQuery('.subbed_selected, .subbed'));
+   var jqItems = jQuery('.subbed_selected').add('.subbed');
+   if (jqItems.length == 0) return;
+
+   // Delete existing toolbars (Just in case.)
+   jQuery('.bggpluscontentscript_toolbar').remove();
+
+   var newItemsAttr = getSubscriptionsNewItemAttr(jqItems);
 
    // Since the user is browsing her subscriptions' new items, we should
    // add a toolbar to allow skipping among them.
    var toolbar = document.createElement('div');
    toolbar.className = 'bggpluscontentscript_toolbar';
+   toolbar.style.position = 'fixed';
+   toolbar.style.top = '3px';
+   toolbar.style.right = '3px';
+   toolbar.style.backgroundColor = 'pink';
+   toolbar.style.border = '1px solid black';
+   toolbar.style.webkitUserSelect = 'none';
+   toolbar.style.padding = '3px';
+   toolbar.style.opacity = '0.5';
    toolbar.onmouseover = function() { toolbar.style.opacity = 1; }
    toolbar.onmouseout = function() { toolbar.style.opacity = 0.5; }
 
@@ -492,12 +507,13 @@ function prevNextSubscriptionItemsInPage()
 
    var nextPage = toolbar.appendChild(document.createElement('div'));
    nextPage.className = 'bggpluscontentscript_nextPage';
+   nextPage.innerHTML = document.getElementsByClassName('subsicon')[0].innerHTML;
    nextPage.onclick = function() {
       window.location.href = 'http://boardgamegeek.com/subscriptions/next';
    };
 
    var totalItemNum = toolbar.appendChild(document.createElement('div'));
-   totalItemNum.innerHTML = "/" + newItemsAttr.tops.length;
+   totalItemNum.innerHTML = "/" + newItemsAttr.length;
    totalItemNum.style.fontSize = '13px';
    totalItemNum.style.float = 'right';
    totalItemNum.style.paddingRight = '3px';
@@ -597,19 +613,7 @@ function processPage(options)
    {
       var showNextSubbedToolbar = false;
 
-      if (options['prevNextSubscriptionToolbarShow'] == 'even_when_all_new')
-      {
-         showNextSubbedToolbar =
-            (jQuery('.subbed_selected, .subbed').length > 0);
-      }
-      else if (options['prevNextSubscriptionToolbarShow'] == 'only_when_some')
-      {
-         // See if there are any hightlighted items on the page, 
-         // if the user is browsing new items in his subscriptions
-         showNextSubbedToolbar = (jQuery('.subbed_selected').length > 0);
-      }
-
-      if (showNextSubbedToolbar)
+      if (options['prevNextSubscriptionToolbarShow'] == '1')
       {
          prevNextSubscriptionItemsInPage(options);
       }
@@ -628,18 +632,27 @@ function onload()
          }
       }
    );
-
-   chrome.extension.sendRequest(
-      {'cmd': 'insertCss'},
-      function (success) {
-         if (!success) { 
-            console.log("requestCssInsert: Failure during CSS insertion.");
-         }
-      });
 }
 
 
 jQuery(function() { 
       onload();
+
+      /*
+      // XXX for debug
+      try {
+         var d = document.body.appendChild(document.createElement('div'));
+         d.innerHTML = "ONLOAD";
+         d.style.border = "1px solid green";
+         d.style.backgroundColor = 'silver';
+         d.style.width = '30px';
+         d.style.height = '30px';
+         d.style.position = 'fixed';
+         d.style.top = '0';
+         d.style.left = '0';
+         d.onclick = function() { onload(); console.log('loaded.'); };
+      }
+      catch (e) { }
+      */
 });
 
