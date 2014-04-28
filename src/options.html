@@ -6,24 +6,46 @@
    <body>
 <h1>BGG++ Options</h1>
 <form>
-   <input type="checkbox" id="jumptosinglesearchresult">
-   <label for="jumptosinglesearchresult">Automatically jump to the game's page
-      if it's the only result found during a search.</label>
-   <br/>
+	<p>
+   	<input type="checkbox" id="jumptosinglesearchresult">
+   	<label for="jumptosinglesearchresult">Automatically jump to the game's page
+      	if it's the only result found during a search.</label>
+   </p>
 
-   <input type="checkbox" id="searchresultscolumnsenable">
-   <label for="searchresultscolumnsenable">I want to be able to modify the search results columns.<br/>(This allows adding columns like "number of players", "play time", and removing and reordering existing columns.)</label>
-   <br/>
+	<p>
+   	<input type="checkbox" id="searchresultscolumnsenable">
+   	<label for="searchresultscolumnsenable">I want to be able to modify the search results columns.<br/>(This allows adding columns like "number of players", "play time", and removing and reordering existing columns.)</label>
+	</p>
 
-   <label for="prevNextSubscriptionToolbarShow">Show buttons to jump between new items on a page to which you have subscribed?</label>
-   <select id="prevNextSubscriptionToolbarShow">
-      <option value="0">Nope, never.</option>
-      <option value="1">Only when there are new items.</option>
-   </select>
-   <br/>
+	<p>
+   	<label for="prevNextSubscriptionToolbarShow">Show buttons to jump between new items on a page to which you have subscribed?</label>
+   	<select id="prevNextSubscriptionToolbarShow">
+      	<option value="0">Nope, never.</option>
+      	<option value="1">Only when there are new items.</option>
+   	</select>
+   </p>
 
-   <input type="checkbox" id="showMicrobadgeCounts">
-   <label for="showMicrobadgeCounts">In a user's profile page, show the <strong>number of microbadges</strong> of each type.</label>
+	<p>
+   	<input type="checkbox" id="showMicrobadgeCounts">
+   	<label for="showMicrobadgeCounts">In a user's profile page, show the <strong>number of microbadges</strong> of each type.</label>
+   </p>
+
+
+	<h3>Keyboard Shortcuts</h3>
+
+   <input type="checkbox" id="shortcutKeyPrevUnreadEnable">
+   <label for="shortcutKeyPrevUnreadEnable">Scroll to <b>prev</b> unread item on page</label>
+   <input type="text" id="shortcutKeyPrevUnreadKey" value="" maxlength="1" size="1">
+   <br/>
+   
+   <input type="checkbox" id="shortcutKeyNextUnreadEnable">
+   <label for="shortcutKeyNextUnreadEnable">Scroll to <b>next</b> unread item on page</label>
+   <input type="text" id="shortcutKeyNextUnreadKey" value="" maxlength="1" size="1">
+   <br/>
+   
+   <input type="checkbox" id="shortcutKeyNextPageEnable">
+   <label for="shortcutKeyNextPageEnable">Navigate to the <b>next unread subscription page</b></label>
+   <input type="text" id="shortcutKeyNextPageKey" value="" maxlength="1" size="1">
    <br/>
    
 </form>
