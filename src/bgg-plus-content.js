@@ -474,11 +474,17 @@ function prevNextSubscriptionItemsInPage(options)
    if (jqItems.length == 0) return;
 
    // If the option require keyboard shortcuts, then listen for them
-   if ((options['shortcutKeyNextUnreadKey'].length && options['shortcutKeyNextUnreadEnable'] == 1) ||
-         (options['shortcutKeyPrevUnreadKey'].length && options['shortcutKeyPrevUnreadEnable'] == 1))
+   if ((options['shortcutKeyNextUnreadKey'] && options['shortcutKeyNextUnreadKey'].length && options['shortcutKeyNextUnreadEnable'] == 1) ||
+         (options['shortcutKeyPrevUnreadKey'] && options['shortcutKeyPrevUnreadKey'].length && options['shortcutKeyPrevUnreadEnable'] == 1))
    {
       jQuery(document).keypress(function(event)
       {
+         // ignore keystrokes in text inputs
+         if ((event.target.type == "textarea") || (event.target.type == "text") || (event.target.type == "select-one"))
+         {
+            return false;
+         }
+
          var keyAsLetter = String.fromCharCode(event.which);
          
          // Scroll to Next item on page
