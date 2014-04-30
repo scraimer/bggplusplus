@@ -482,7 +482,7 @@ function prevNextSubscriptionItemsInPage(options)
          // ignore keystrokes in text inputs
          if ((event.target.type == "textarea") || (event.target.type == "text") || (event.target.type == "select-one"))
          {
-            return false;
+            return true;
          }
 
          var keyAsLetter = String.fromCharCode(event.which);
