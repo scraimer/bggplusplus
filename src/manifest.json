@@ -1,6 +1,6 @@
 {
    "name": "BGG++",
-   "version": "0.0.7",
+   "version": "0.0.10",
    "manifest_version" : 2,
 
    "description": "Enhances BoardGameGeek.com",
@@ -10,17 +10,20 @@
       "48": "icon.png"
    },
 
+   "page_action": {},
+
    "permissions": [ 
       "http://*.boardgamegeek.com/*",
+      "https://*.boardgamegeek.com/*",
       "tabs"
    ],
    "background": { "page": "background.html" },
    "content_scripts": [
       {
-         "matches": ["http://*.boardgamegeek.com/*"],
+         "matches": ["http://*.boardgamegeek.com/*", "https://*.boardgamegeek.com/*"],
          "css": ["content.css"],
          "js": [
-            "jquery-1.8.2.js", "jquery.scrollto.js",
+            "jquery-1.8.2.js", "jquery.scrollTo-2.1.2.js",
             "bgg-plus-content.js"
          ],
          "run_at": "document_start"

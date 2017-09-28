@@ -313,7 +313,7 @@ function searchResultsColumns(cfg)
    {
       gameIds.push(t.rows[i].bggId);
    }
-   var gameInfoXmlUrl = "http://www.boardgamegeek.com/xmlapi/boardgame/" +
+   var gameInfoXmlUrl = "https://www.boardgamegeek.com/xmlapi/boardgame/" +
       gameIds.join(',');
 
    console.log(gameInfoXmlUrl);
@@ -367,7 +367,7 @@ function scrollToPrevSubbed(newItemsAttr)
    {
       var delta = newItemsAttr[i].top - currentPos;
 
-      // Note: When we call ScrollTo, it will only scroll to within 10 px of
+      // Note: When we call scrollTo, it will only scroll to within 10 px of
       //       the element. So it we're already there, we should go to the next
       //       element.
 
@@ -381,7 +381,7 @@ function scrollToPrevSubbed(newItemsAttr)
 
    if (nearest != -1)
    {
-      $(newItemsAttr[nearest].item).ScrollTo();
+      $(document).scrollTo(newItemsAttr[nearest].item);
    }
 
    return false;
@@ -399,7 +399,7 @@ function scrollToNextSubbed(newItemsAttr)
    {
       var delta = newItemsAttr[i].top - currentPos;
 
-      // Note: When we call ScrollTo, it will only scroll to within 10 px of
+      // Note: When we call scrollTo, it will only scroll to within 10 px of
       //       the element. So it we're already there, we should go to the next
       //       element.
 
@@ -413,7 +413,7 @@ function scrollToNextSubbed(newItemsAttr)
 
    if (nearest != -1)
    {
-      $(newItemsAttr[nearest].item).ScrollTo();
+      $(document).scrollTo(newItemsAttr[nearest].item);
    }
 
    return false;
@@ -471,7 +471,7 @@ var newItemsAttr = null;
 function prevNextSubscriptionItemsInPage(options)
 {
    var jqItems = jQuery('.subbed_selected').add('.subbed');
-   if (jqItems.length == 0) return;
+   if (jqItems.length == 0) return false;
 
    // If the option require keyboard shortcuts, then listen for them
    if ((options['shortcutKeyNextUnreadKey'] && options['shortcutKeyNextUnreadKey'].length && options['shortcutKeyNextUnreadEnable'] == 1) ||
@@ -502,7 +502,7 @@ function prevNextSubscriptionItemsInPage(options)
          // Navigate to next unread page in subscriptions
          else if ((options['shortcutKeyNextPageEnable'] == 1) && (keyAsLetter == options['shortcutKeyNextPageKey']))
          {
-            window.location.href = 'http://boardgamegeek.com/subscriptions/next';
+            window.location.href = 'https://boardgamegeek.com/subscriptions/next';
          }
       });
    }
@@ -552,7 +552,7 @@ function prevNextSubscriptionItemsInPage(options)
    nextPage.className = 'bggpluscontentscript_nextPage';
    nextPage.innerHTML = document.getElementsByClassName('subsicon')[0].innerHTML;
    nextPage.onclick = function() {
-      window.location.href = 'http://boardgamegeek.com/subscriptions/next';
+      window.location.href = 'https://boardgamegeek.com/subscriptions/next';
    };
 
    var totalItemNum = toolbar.appendChild(document.createElement('div'));
@@ -600,6 +600,7 @@ function prevNextSubscriptionItemsInPage(options)
    });
    updateByScroll();
 
+   return true;
 }
 
 function showMicrobadgeCounts()
@@ -629,269 +630,10 @@ function showMicrobadgeCounts()
    }
 }
 
-function parseG4ggGeekListItems(xmlDocument, statusElement, callback)
+function sendMsg_setPageIconForCurrentTab(iconMode)
 {
-   var items = {};
-
-   listItems = xmlDocument.getElementsByTagName('item');
-   var geekListId = xmlDocument.firstChild.getAttribute('id');
-   for (i=0; i < listItems.length; ++i)
-   {
-      var listItem = listItems[i];
-      var itemid = parseInt(listItem.getAttribute('id'));
-      items[itemid] = {
-         'geeklistid': geekListId,
-         'itemid': itemid,
-         'name': listItem.getAttribute('objectname'),
-         'imageid': parseInt(listItem.getAttribute('imageid')),
-         'description':
-            listItem.getElementsByTagName('body')[0].firstChild.nodeValue,
-      };
-   }
-   console.log(items);
-
-   var requestQueue = [];
-   for (var i in items)
-   {
-      requestQueue.push(i);
-   }
-
-   function parseTippers(htmlData)
-   {
-      var prefix = 'Tipped by</div>'.toLowerCase();
-      var data = htmlData.slice(htmlData.toLowerCase().indexOf(prefix) +
-            prefix.length);
-      
-      var rg = new RegExp('href=["\'].*?/user/(.*?)["\']>(.*?)<\/a>&'
-            + 'nbsp;([0-9]+\.[0-9]{2})', 'ig');
-      var r  = new RegExp('href=["\'].*?/user/(.*?)["\']>(.*?)<\/a>&'
-            + 'nbsp;([0-9]+\.[0-9]{2})', 'i');
-      var items = data.match(rg);
-      tippers = {};
-      for (var i=0; i<items.length; ++i)
-      {
-         if (!items[i]) continue;
-         var a = r.exec(items[i]);
-         if (!a) continue;
-
-         var sum = parseFloat(a[3], 10);
-
-         tippers[a[2]] = {'user': a[2], 'link': a[1], 'sum': sum};
-      }
-
-      return tippers;
-   }
-
-   function getTippers(itemid, callback)
-   {
-      var cacheKey = 'BGG++CACHE-recommend-' + itemid;
-      var cached = localStorage[cacheKey];
-      if (cached)
-      {
-         try {
-            cached = JSON.parse(cached);
-         } catch(exception) {
-            console.log('JSON parse error:' + exception);
-            delete localStorage[cacheKey];
-            return;
-         }
-         
-         callback(parseTippers(cached.htmlData))
-      }
-      else
-      {
-         jQuery.ajax({
-            'url': '/geekrecommend.php',
-            'data': {
-               'action': 'recspy',
-               'itemtype': 'listitem',
-               'itemid': itemid
-            },
-            'dataType': 'html',
-            'complete': function(jqXHR, textStatus) {
-               localStorage[cacheKey] = JSON.stringify({
-                  'date': (new Date()).getTime(),
-                  'htmlData': jqXHR.responseText
-               });
-               var tippers = (textStatus == "success") ?
-                  parseTippers(jqXHR.responseText) : null;
-               callback(tippers, textStatus);
-            }
-         });
-      }
-   }
-
-   var inProgress = null;
-   var queueServiceInterval = setInterval(function ()
-   {
-      if (requestQueue.length > 0 && inProgress == null)
-      {
-         var itemid = requestQueue.pop();
-         inProgress = {'start': (new Date()).getTime(), 'itemid': itemid };
-
-         statusElement.innerHTML = "Fetching tippers for " + itemid +
-            ". There are " + requestQueue.length + " remaining.";
-         setTimeout(function()
-         {
-            getTippers(itemid,
-               function (tippers, requestStatus) {
-                  items[itemid].tippers = tippers;
-                  inProgress = null;
-               });
-         }, 10);
-      }
-      else if (requestQueue.length == 0)
-      {
-         statusElement.style.display = 'none';
-         clearInterval(queueServiceInterval);
-         queueServiceInterval = null;
-
-         callback(items);
-      }
-   }, 100);
-}
-
-function getUrlToGeekListItem(geekListId, geekListItemId)
-{
-   return "http://boardgamegeek.com/geeklist/" + geekListId +
-      "/item/" + geekListItemId + "#item" + geekListItemId;
-}
-
-function buildDomOfStatsForSingleList(out, items)
-{
-   var myUser = getBggUsername();
-   out.appendChild(document.createElement('p')).innerHTML = 
-      "The following is how much that " + myUser + 
-      " spent on items in the scanned GeekList.";
-   var ul = out.appendChild(document.createElement('ul'));
-   for (var i in items)
-   {
-      var itemOut = ul.appendChild(document.createElement('li'));
-      itemOut.style.border = '1px solid black';
-      var itemLink = "<a href='" +
-         getUrlToGeekListItem(items[i].geeklistid, items[i].itemid) + "'>" +
-         items[i].name + "</a>";
-
-      if (!items[i].tippers)
-      {
-         itemOut.innerHTML =
-            "Error fetching tippers for item " +itemLink+ "<br/>";
-         continue;
-      }
-
-      if (items[i].tippers[myUser])
-      {
-         var span1 = itemOut.appendChild(document.createElement('div'));
-         span1.innerHTML = items[i].tippers[myUser].sum + 'gg on item ' +
-            itemLink + '<br/>';
-
-         var menu = itemOut.appendChild(document.createElement('div'));
-         menu.style.backgroundColor = 'black';
-         menu.style.color = 'green';
-         var menuItemLink = menu.appendChild(document.createElement('a'));
-         menuItemLink.innerHTML = "Go to item";
-         menuItemLink.href =
-            getUrlToGeekListItem(items[i].geeklistid, items[i].itemid);
-         var menuTop10 = menu.appendChild(document.createElement('a'));
-         menuTop10.innerHTML = "Top tippers";
-         var menuDesc = menu.appendChild(document.createElement('a'));
-         menuDesc.innerHTML = "Show description";
-      }
-   }
-}
-
-function showStatsForSingleList(geekListId, out, statusElement)
-{
-   // XXX For debug only: use cached copy
-   if (localStorage['cachedItems'])
-   {
-      console.log('USING CACHED COPY. FOR DEBUGGING ONLY!');
-      var items = JSON.parse(localStorage['cachedItems']);
-      buildDomOfStatsForSingleList(out, items);
-      return;
-   }
-
-   // Note: use the old BGG XML API, because there's no support for geeklists
-   // in the new XML API 2
-   var url = 'http://www.boardgamegeek.com/xmlapi/geeklist/' + geekListId;
-
-   statusElement.innerHTML = "Fetching Geeklist " + geekListId + "...";
-
-   jQuery.ajax({
-      'url': url,
-      'dataType': 'xml',
-      'success': function(xmlDocument)
-         {
-            statusElement.innerHTML += "Done.<br/>Parsing...";
-            parseG4ggGeekListItems(xmlDocument, statusElement, function(items)
-            {
-               out.innerHTML = getHtmlOfStatsForSingleList(items);
-
-               // XXX For debug only: cache copy
-               localStorage['cachedItems'] = JSON.stringify(items);
-            });
-         }
-   });
-}
-
-function showG4ggPanel()
-{
-   var geekListIds = [149919,  // December 2012
-       151135 // January 2013 
-   ];
-
-   var outParent = document.body.appendChild(document.createElement('div'));
-   outParent.style.position = 'fixed';
-   outParent.style.top = '30px';
-   outParent.style.left = '100px';
-   outParent.style.overflow = 'scroll';
-   outParent.style.backgroundColor = 'silver';
-   outParent.style.border = '1px solid black';
-   outParent.style.color = 'black';
-   outParent.style.zIndex = 1000;
-   function resizeOutParent()
-   {
-      outParent.style.width = (parseInt(jQuery(window).width()) - 200) + 'px';
-      outParent.style.height = (parseInt(jQuery(window).height()) - 60)  + 'px';
-   }
-   var resizeTimeout = null;
-   jQuery(window).on('resize', function() {
-      if (resizeTimeout) return;
-      resizeTimeout = setTimeout(function() {
-         resizeTimeout = null;
-         resizeOutParent();
-      }, 100);
-   });
-   resizeOutParent();
-
-   var span1 = outParent.appendChild(document.createElement('span'));
-   span1.innerHTML = "Enter the ID of the GeekList to scan for tips: ";
-   var entryIdInput = outParent.appendChild(document.createElement('input'));
-   entryIdInput.type = 'text';
-   entryIdInput.value = localStorage['G4GG-scan-id'] || geekListIds[0];
-   var scanButton = outParent.appendChild(document.createElement('button'));
-   scanButton.innerHTML = "Scan";
-   var span2 = outParent.appendChild(document.createElement('span'));
-   span2.innerHTML = "<br/><br/>";
-
-   var out = outParent.appendChild(document.createElement('div'));
-   out.innerHTML = "";
-
-   scanButton.onclick = function()
-   {
-      out.innerHTML = "";
-      localStorage['G4GG-scan-id'] = entryIdInput.value;
-      showStatsForSingleList(entryIdInput.value, out, statusElement);
-      return false;
-   };
-
-   var statusElement = outParent.appendChild(document.createElement('div'));
-   statusElement.style.position = 'fixed';
-   statusElement.style.top = '0px';
-   statusElement.style.left = '0px';
-   statusElement.style.backgroundColor = 'silver';
-
-   showStatsForSingleList(entryIdInput.value, out, statusElement);
+   chrome.runtime.sendMessage(
+      {'cmd':'setPageActionIcon', 'mode': iconMode});
 }
 
 function processPage(options)
@@ -899,55 +641,92 @@ function processPage(options)
    var href = location.href;
    href = href.replace(
          'http://www.boardgamegeek.com',
-         'http://boardgamegeek.com');
+         'http://boardgamegeek.com',
+         'https://www.boardgamegeek.com',
+         'https://boardgamegeek.com');
 
-   // If the user wishes that we "jump to single search result", then we
-   // shouldn't even try to get the "custom columns" for the search results.
-   if (href.indexOf('http://boardgamegeek.com/geeksearch.php') == 0)
+   var action = 'none';
+   if ((href.indexOf('http://boardgamegeek.com/geeksearch.php') == 0) ||
+         (href.indexOf('https://boardgamegeek.com/geeksearch.php') == 0))
    {
-      var success = false;
       if (options['jumptosinglesearchresult'] == 1)
       {
-         success = singleSearchResultJump();
+         action = 'jump-search';
       }
-
-      if ((!success) && options['searchresultscolumnsenable'] == 1)
+      else if (options['searchresultscolumnsenable'] == 1)
       {
-         searchResultsColumns(options.searchresultcolumns);
+         action = 'search-columns';
       }
    }
-   // A user's profile page
-   else if (href.indexOf('http://boardgamegeek.com/user/') == 0)
+   else if ((href.indexOf('http://boardgamegeek.com/user/') == 0) ||
+         (href.indexOf('https://boardgamegeek.com/user/') == 0))
    {
+      // A user's profile page
       if (options['showMicrobadgeCounts'] == 1)
       {
-         showMicrobadgeCounts();
+         action = 'microbadges'
       }
-   }
-   else if (href.indexOf('http://boardgamegeek.com/contact') == 0)
-   {
-      showG4ggPanel();
    }
    else
    {
-      var showNextSubbedToolbar = false;
-
       if (options['prevNextSubscriptionToolbarShow'] == '1')
       {
-         prevNextSubscriptionItemsInPage(options);
+         action = 'try-show-toolbar';
+      }
+   }
+
+
+   var iconMode = 'hide';
+   if (options['disabled'] != 1)
+   {
+      if (action == 'jump-search')
+      {
+         iconMode = 'active';
+         if(!singleSearchResultJump() && options['searchresultscolumnsenable'] == 1)
+         {
+            action = 'search-columns';
+         }
+      }
+      if (action == 'search-columns')
+      {
+         iconMode = 'active';
+         searchResultsColumns(options.searchresultcolumns);
+      }
+      if (action == 'microbadges')
+      {
+         iconMode = 'active';
+         showMicrobadgeCounts();
+      }
+      if (action == 'try-show-toolbar')
+      {
+         if (prevNextSubscriptionItemsInPage(options))
+         {
+            iconMode = 'active';
+         }
+      }
+      
+      sendMsg_setPageIconForCurrentTab(iconMode);
+   }
+   else
+   {
+      // Only show the disabled icon if we had intented to do something on the page
+      if (iconMode != 'none')
+      {
+         sendMsg_setPageIconForCurrentTab('disabled');
       }
    }
 }
 
+
 function onload()
 {
-   chrome.extension.sendRequest(
+   chrome.runtime.sendMessage(
       {'cmd':'getOptions'},
-      function (response)
+      function (options)
       {
-         if (response != null)
+         if (options != null)
          {
-            processPage(response);
+            processPage(options);
          }
       }
    );
