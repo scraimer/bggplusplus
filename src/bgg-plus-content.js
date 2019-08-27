@@ -1,3 +1,5 @@
+var globalNavToolbarHeight = 52;
+
 Array.prototype.binarySearch = function(find, comparator) {
   var low = 0, high = this.length - 1,
       i, comparison;
@@ -381,7 +383,7 @@ function scrollToPrevSubbed(newItemsAttr)
 
    if (nearest != -1)
    {
-      $(document).scrollTo(newItemsAttr[nearest].item);
+      $(document).scrollTo(newItemsAttr[nearest].item, 0, {offset: -globalNavToolbarHeight} );
    }
 
    return false;
@@ -397,7 +399,7 @@ function scrollToNextSubbed(newItemsAttr)
    var nearest = -1, nearestDelta = -1;
    for (i=0; i < len; ++i)
    {
-      var delta = newItemsAttr[i].top - currentPos;
+      var delta = newItemsAttr[i].top - currentPos - globalNavToolbarHeight;
 
       // Note: When we call scrollTo, it will only scroll to within 10 px of
       //       the element. So it we're already there, we should go to the next
@@ -413,7 +415,7 @@ function scrollToNextSubbed(newItemsAttr)
 
    if (nearest != -1)
    {
-      $(document).scrollTo(newItemsAttr[nearest].item);
+      $(document).scrollTo(newItemsAttr[nearest].item, 0, {offset: -globalNavToolbarHeight} );
    }
 
    return false;
@@ -422,7 +424,7 @@ function scrollToNextSubbed(newItemsAttr)
 function updateToolbarByScrollPosition(
       newItemsAttr, totalItemNum, prevItem, nextItem)
 {
-   var currentPos = jQuery(window).scrollTop();
+   var currentPos = jQuery(window).scrollTop() + globalNavToolbarHeight;
    var passed = 0;
    var len = newItemsAttr.length;
    for (i=0; i < len; ++i)
@@ -470,7 +472,7 @@ function getSubscriptionsNewItemAttr(newItems)
 var newItemsAttr = null;
 function prevNextSubscriptionItemsInPage(options)
 {
-   var jqItems = jQuery('.subbed_selected').add('.subbed');
+   var jqItems = jQuery('.subbed');
    if (jqItems.length == 0) return false;
 
    // If the option require keyboard shortcuts, then listen for them
@@ -518,7 +520,7 @@ function prevNextSubscriptionItemsInPage(options)
    var toolbar = document.createElement('div');
    toolbar.className = 'bggpluscontentscript_toolbar';
    toolbar.style.position = 'fixed';
-   toolbar.style.top = '3px';
+   toolbar.style.top = (globalNavToolbarHeight + 3) + 'px';
    toolbar.style.right = '3px';
    toolbar.style.backgroundColor = 'pink';
    toolbar.style.border = '1px solid black';

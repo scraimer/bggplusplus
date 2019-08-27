@@ -12,7 +12,7 @@
 
 .bggpluscontentscript_toolbar {
    position: fixed;
-   top: 3px;
+   top: 55px;
    right: 3px;
    background-color: pink;
    border: 1px solid black;
@@ -30,9 +30,7 @@
    height: 16px;
 }
 
-/*
 .bggpluscontentscript_nextPage { background: url("chrome-extension://__MSG_@@extension_id__/newspaper-go.png"); }
-*/
 .bggpluscontentscript_prevItem { background: url("chrome-extension://__MSG_@@extension_id__/newspaper-up.png"); }
 .bggpluscontentscript_nextItem { background: url("chrome-extension://__MSG_@@extension_id__/newspaper-down.png"); }
 
