@@ -472,7 +472,7 @@ function getSubscriptionsNewItemAttr(newItems)
 var newItemsAttr = null;
 function prevNextSubscriptionItemsInPage(options)
 {
-   var jqItems = jQuery('.subbed');
+   var jqItems = jQuery('.subbed,.subbed_selected');
    if (jqItems.length == 0) return false;
 
    // If the option require keyboard shortcuts, then listen for them
