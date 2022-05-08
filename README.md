@@ -1,3 +1,5 @@
+# This extension is not compatible with the new BGG site. It's been great fun, but I think it's time to say goodbye.
+
 BGG++
 =====
 
